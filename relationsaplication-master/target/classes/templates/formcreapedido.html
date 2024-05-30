@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <title>App</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <!------ Include the above in your HEAD tag ---------->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+
+
+</head>
+<header th:replace="plantilla/plantilla :: encabezado"/>
+<body>
+
+
+
+
+
+
+
+
+
+<div id="wrapper">
+    <div class="overlay"></div>
+
+    <!-- Sidebar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top" id="sidebar-wrapper" role="navigation">
+        <ul class="nav sidebar-nav">
+            <li class="sidebar-brand">
+                <a href="#">
+                    Brand
+                </a>
+            </li>
+            <li>
+                <a th:href="@{producto/nuevo}" >CREAR PRODUCTO</a>
+            </li>
+            <li>
+                <a th:href="@{producto/lista}" >LISTAR PRODUCTO</a>
+            </li>
+            <li>
+                <a th:href="@{pedido/nuevo}" >CREAR PEDIDO</a>
+            </li>
+            <li>
+                <a th:href="@{pedido/lista}" >LISTAR PEDIDO</a>
+            </li>
+
+
+            <li>
+                <a href="#">DOCUMENTO</a>
+            </li>
+
+        </ul>
+    </nav>
+    <!-- /#sidebar-wrapper -->
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+        <button type="button" class="hamburger is-closed" data-toggle="offcanvas">
+            <span class="hamb-top"></span>
+            <span class="hamb-middle"></span>
+            <span class="hamb-bottom"></span>
+        </button>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+
+
+
+                    <h1>Crear PEDIDO</h1>
+                    <div class="card-body">
+                        <form th:action="@{/pedido/accioncrear}" method="post" th:object="${pedidollenar}">
+
+                            <div class="form-group">
+                                <label class="control-label" for="pediReferencia">ID PEDIDO: </label>
+                                <input id="pediReferencia" type="text" class="form-control" th:field="*{pediReferencia}"
+                                       required autofocus="autofocus">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="control-label" for="pediReferencia">ID PEDIDO: </label>
+
+                                <select id="selectProducto" th:field="*{producto}" class="form-control" required>
+                                    <option value="">Selecciona un producto...</option> <!-- Opción para elegir -->
+                                    <th:block th:each="producto : ${listaproductos}">
+                                        <option th:text="${producto.nombreProdu}" th:value="${producto.codigo}"></option>
+                                    </th:block>
+                                </select>
+
+                                <div id="habilitarCantidad" class="form-group" style="display: none;">
+                                    <label class="control-label" for="pediCantidad">CANTIDAD: </label>
+                                    <input id="pediCantidad" type="text" class="form-control" th:field="*{pediCantidad}" required autofocus="autofocus">
+                                </div>
+
+                            </div>los
+
+                            <script>
+                                // Obtenemos el select y el campo de cantidad
+                                const selectProducto = document.getElementById('selectProducto');
+                                const cantidadDiv = document.getElementById('habilitarCantidad');
+
+                                // Agregamos un event listener al select para detectar cambios
+                                selectProducto.addEventListener('change', function() {
+                                    // Si se selecciona algo en el select, mostramos el campo de cantidad, sino lo ocultamos
+                                    if (selectProducto.value !== "") {
+                                        cantidadDiv.style.display = 'block';
+                                    } else {
+                                        cantidadDiv.style.display = 'none';
+                                    }
+                                });
+                            </script>
+
+
+                            <table id="tablaProductos" class="table">
+                                <thead>
+                                <tr>
+                                    <th>ID Producto</th>
+                                    <th>Nombre Producto</th>
+                                    <th>Cantidad</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <!-- Aquí se agregarán los productos seleccionados -->
+                                </tbody>
+                                <tfoot>
+                                <tr>
+                                    <td colspan="2" style="text-align: right;"><strong>Subtotal:</strong></td>
+                                    <td id="subtotalCantidad">0</td>
+                                </tr>
+                                </tfoot>
+                            </table>
+
+                            <script>
+                                document.addEventListener("DOMContentLoaded", function() {
+                                    const selectProducto = document.getElementById('selectProducto');
+                                    const cantidadInput = document.getElementById('pediCantidad');
+                                    const tablaProductos = document.getElementById('tablaProductos').getElementsByTagName('tbody')[0];
+                                    const subtotalCantidad = document.getElementById('subtotalCantidad');
+
+                                    selectProducto.addEventListener('change', function() {
+                                        mostrarOcultarCantidad();
+                                    });
+
+                                    cantidadInput.addEventListener('change', function() {
+                                        agregarProducto();
+                                    });
+
+                                    function mostrarOcultarCantidad() {
+                                        if (selectProducto.value !== "") {
+                                            cantidadDiv.style.display = 'block';
+                                        } else {
+                                            cantidadDiv.style.display = 'none';
+                                        }
+                                    }
+
+                                    function agregarProducto() {
+                                        const productoSeleccionado = selectProducto.options[selectProducto.selectedIndex].text;
+                                        const cantidad = parseInt(cantidadInput.value);
+
+                                        // Verificar que se haya seleccionado un producto y se haya ingresado una cantidad válida
+                                        if (productoSeleccionado && !isNaN(cantidad) && cantidad > 0) {
+                                            // Verificar si el producto ya está en la tabla
+                                            let filaExistente = null;
+                                            for (let i = 0; i < tablaProductos.rows.length; i+) {
+                                                if (tablaProductos.rows[i].cells[0].textContent === selectProducto.value) {
+                                                    filaExistente = tablaProductos.rows[i];
+                                                    break;
+                                                }
+                                            }
+
+                                            if (filaExistente) {
+                                                // Si el producto ya está en la tabla, actualizar la cantidad
+                                                const cantidadActual = parseInt(filaExistente.cells[2].textContent);
+                                                filaExistente.cells[2].textContent = cantidadActual + cantidad;
+                                            } else {
+                                                // Si el producto no está en la tabla, agregar una nueva fila
+                                                const fila = tablaProductos.insertRow();
+                                                const celdaID = fila.insertCell(0);
+                                                const celdaNombre = fila.insertCell(1);
+                                                const celdaCantidad = fila.insertCell(2);
+
+                                                celdaID.textContent = selectProducto.value;
+                                                celdaNombre.textContent = productoSeleccionado;
+                                                celdaCantidad.textContent = cantidad;
+                                            }
+
+                                            // Actualizar el subtotal de la cantidad
+                                            actualizarSubtotal();
+                                        }
+                                    }
+
+                                    function actualizarSubtotal() {
+                                        let totalCantidad = 0;
+
+                                        // Recorrer todas las filas de la tabla y sumar las cantidades
+                                        for (let i = 0; i < tablaProductos.rows.length; i++) {
+                                            totalCantidad += parseInt(tablaProductos.rows[i].cells[2].textContent);
+                                        }
+
+                                        // Actualizar el valor del subtotal
+                                        subtotalCantidad.textContent = totalCantidad;
+                                    }
+                                });
+                            </script>
+
+
+                            <script>
+                                document.addEventListener("DOMContentLoaded", function() {
+                                    const selectProducto = document.getElementById('selectProducto');
+                                    const cantidadInput = document.getElementById('pediCantidad');
+                                    const tablaProductos = document.getElementById('tablaProductos').getElementsByTagName('tbody')[0];
+
+                                    selectProducto.addEventListener('change', function() {
+                                        mostrarOcultarCantidad();
+                                    });
+
+                                    cantidadInput.addEventListener('change', function() {
+                                        agregarProducto();
+                                    });
+
+                                    function mostrarOcultarCantidad() {
+                                        if (selectProducto.value !== "") {
+                                            cantidadDiv.style.display = 'block';
+                                        } else {
+                                            cantidadDiv.style.display = 'none';
+                                        }
+                                    }
+
+                                    function agregarProducto() {
+                                        const productoSeleccionado = selectProducto.options[selectProducto.selectedIndex].text;
+                                        const cantidad = cantidadInput.value;
+
+                                        // Verificar que se haya seleccionado un producto y se haya ingresado una cantidad
+                                        if (productoSeleccionado && cantidad) {
+                                            const fila = tablaProductos.insertRow();
+                                            const celdaID = fila.insertCell(0);
+                                            const celdaNombre = fila.insertCell(1);
+                                            const celdaCantidad = fila.insertCell(2);
+
+                                            celdaID.textContent = selectProducto.value;
+                                            celdaNombre.textContent = productoSeleccionado;
+                                            celdaCantidad.textContent = cantidad;
+                                        }
+                                    }
+                                });
+                            </script>
+
+                            <br>
+
+                            <div class="form-group">
+
+                                <label for="pediPago">Seleccione la Pago:</label>
+                                <select id="pediPago"class="form-control" name="pediPago">
+                                    <option value="">Selecciona un PAGO...</option> <!-- Opción para elegir -->
+                                    <option value="NEQUI">NEQUI</option>
+                                    <option value="TARJETA">TARJETA</option>
+                                    <option value="EFECTIVO">Alta</option>
+                                </select>
+                            </div>
+                            <br>
+
+                            <div class="form-group">
+                                <input class="form-check-input" type="checkbox" value="S" id="flexCheckDefault">
+                                <label class="form-check-label" for="flexCheckDefault">
+                                    NECESITA ENVIO?
+                                </label>
+                            </div>
+
+                            <div id="direciconHabilitar" class="form-group" style="display: none;">
+                                <label class="control-label" for="pediDireccion"> DIRECCION: </label>
+                                <input id="pediDireccion" type="text" class="form-control" th:field="*{pediDireccion}" required autofocus="autofocus">
+                            </div>
+
+                            <script>
+                                // Obtenemos el checkbox y el campo de dirección
+                                const checkbox = document.getElementById('flexCheckDefault');
+                                const direccionDiv = document.getElementById('direciconHabilitar');
+
+                                // Agregamos un event listener al checkbox para detectar cambios
+                                checkbox.addEventListener('change', function() {
+                                    // Si el checkbox está marcado, mostramos el campo de dirección, sino lo ocultamos
+                                    if (checkbox.checked) {
+                                        direccionDiv.style.display = 'block';
+                                    } else {
+                                        direccionDiv.style.display = 'none';
+                                    }
+                                });
+                            </script>
+
+
+
+
+                            <br>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-info">Guardar</button>
+
+                            </div>
+                        </form>
+                    </div>
+                    <br>
+                    <div th:replace="plantilla/plantilla :: volver"></div>
+                </div>
+
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        const radioButton = document.getElementById("flexRadioDefault2");
+                        const direccionDiv = document.getElementById("direciconHabilitar");
+
+                        radioButton.addEventListener("change", function() {
+                            if (radioButton.checked) {
+                                direccionDiv.style.display = "block";
+                            } else {
+                                direccionDiv.style.display = "none";
+                            }
+                        });
+
+                        // Si el radio button está seleccionado al cargar la página, muestra el div
+                        if (radioButton.checked) {
+                            direccionDiv.style.display = "block";
+                        }
+                    });
+                </script>
+
+
+
+
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- /#page-content-wrapper -->
+
+</div>
+
+
+<style>
+
+    body {
+    position: relative;
+    overflow-x: hidden;
+}
+body,
+html { height: 100%;}
+.nav .open > a,
+.nav .open > a:hover,
+.nav .open > a:focus {background-color: transparent;}
+
+/*-------------------------------*/
+/*           Wrappers            */
+/*-------------------------------*/
+
+#wrapper {
+    padding-left: 0;
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
+}
+
+#wrapper.toggled {
+    padding-left: 220px;
+}
+
+#sidebar-wrapper {
+    z-index: 1000;
+    left: 220px;
+    width: 0;
+    height: 100%;
+    margin-left: -220px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #1a1a1a;
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
+}
+
+#sidebar-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+#wrapper.toggled #sidebar-wrapper {
+    width: 220px;
+}
+
+#page-content-wrapper {
+    width: 100%;
+    padding-top: 70px;
+}
+
+#wrapper.toggled #page-content-wrapper {
+    position: absolute;
+    margin-right: -220px;
+}
+
+/*-------------------------------*/
+/*     Sidebar nav styles        */
+/*-------------------------------*/
+
+.sidebar-nav {
+    position: absolute;
+    top: 0;
+    width: 220px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sidebar-nav li {
+    position: relative;
+    line-height: 20px;
+    display: inline-block;
+    width: 100%;
+}
+
+.sidebar-nav li:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    height: 100%;
+    width: 3px;
+    background-color: #1c1c1c;
+    -webkit-transition: width .2s ease-in;
+      -moz-transition:  width .2s ease-in;
+       -ms-transition:  width .2s ease-in;
+            transition: width .2s ease-in;
+
+}
+.sidebar-nav li:first-child a {
+    color: #fff;
+    background-color: #1a1a1a;
+}
+.sidebar-nav li:nth-child(2):before {
+    background-color: #ec1b5a;
+}
+.sidebar-nav li:nth-child(3):before {
+    background-color: #79aefe;
+}
+.sidebar-nav li:nth-child(4):before {
+    background-color: #314190;
+}
+.sidebar-nav li:nth-child(5):before {
+    background-color: #279636;
+}
+.sidebar-nav li:nth-child(6):before {
+    background-color: #7d5d81;
+}
+.sidebar-nav li:nth-child(7):before {
+    background-color: #ead24c;
+}
+.sidebar-nav li:nth-child(8):before {
+    background-color: #2d2366;
+}
+.sidebar-nav li:nth-child(9):before {
+    background-color: #35acdf;
+}
+.sidebar-nav li:hover:before,
+.sidebar-nav li.open:hover:before {
+    width: 100%;
+    -webkit-transition: width .2s ease-in;
+      -moz-transition:  width .2s ease-in;
+       -ms-transition:  width .2s ease-in;
+            transition: width .2s ease-in;
+
+}
+
+.sidebar-nav li a {
+    display: block;
+    color: #ddd;
+    text-decoration: none;
+    padding: 10px 15px 10px 30px;
+}
+
+.sidebar-nav li a:hover,
+.sidebar-nav li a:active,
+.sidebar-nav li a:focus,
+.sidebar-nav li.open a:hover,
+.sidebar-nav li.open a:active,
+.sidebar-nav li.open a:focus{
+    color: #fff;
+    text-decoration: none;
+    background-color: transparent;
+}
+
+.sidebar-nav > .sidebar-brand {
+    height: 65px;
+    font-size: 20px;
+    line-height: 44px;
+}
+.sidebar-nav .dropdown-menu {
+    position: relative;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    background-color: #222;
+    box-shadow: none;
+}
+
+/*-------------------------------*/
+/*       Hamburger-Cross         */
+/*-------------------------------*/
+
+.hamburger {
+  position: fixed;
+  top: 20px;
+  z-index: 999;
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin-left: 15px;
+  background: transparent;
+  border: none;
+}
+.hamburger:hover,
+.hamburger:focus,
+.hamburger:active {
+  outline: none;
+}
+.hamburger.is-closed:before {
+  content: '';
+  display: block;
+  width: 100px;
+  font-size: 14px;
+  color: #fff;
+  line-height: 32px;
+  text-align: center;
+  opacity: 0;
+  -webkit-transform: translate3d(0,0,0);
+  -webkit-transition: all .35s ease-in-out;
+}
+.hamburger.is-closed:hover:before {
+  opacity: 1;
+  display: block;
+  -webkit-transform: translate3d(-100px,0,0);
+  -webkit-transition: all .35s ease-in-out;
+}
+
+.hamburger.is-closed .hamb-top,
+.hamburger.is-closed .hamb-middle,
+.hamburger.is-closed .hamb-bottom,
+.hamburger.is-open .hamb-top,
+.hamburger.is-open .hamb-middle,
+.hamburger.is-open .hamb-bottom {
+  position: absolute;
+  left: 0;
+  height: 4px;
+  width: 100%;
+}
+.hamburger.is-closed .hamb-top,
+.hamburger.is-closed .hamb-middle,
+.hamburger.is-closed .hamb-bottom {
+  background-color: #1a1a1a;
+}
+.hamburger.is-closed .hamb-top {
+  top: 5px;
+  -webkit-transition: all .35s ease-in-out;
+}
+.hamburger.is-closed .hamb-middle {
+  top: 50%;
+  margin-top: -2px;
+}
+.hamburger.is-closed .hamb-bottom {
+  bottom: 5px;
+  -webkit-transition: all .35s ease-in-out;
+}
+
+.hamburger.is-closed:hover .hamb-top {
+  top: 0;
+  -webkit-transition: all .35s ease-in-out;
+}
+.hamburger.is-closed:hover .hamb-bottom {
+  bottom: 0;
+  -webkit-transition: all .35s ease-in-out;
+}
+.hamburger.is-open .hamb-top,
+.hamburger.is-open .hamb-middle,
+.hamburger.is-open .hamb-bottom {
+  background-color: #1a1a1a;
+}
+.hamburger.is-open .hamb-top,
+.hamburger.is-open .hamb-bottom {
+  top: 50%;
+  margin-top: -2px;
+}
+.hamburger.is-open .hamb-top {
+  -webkit-transform: rotate(45deg);
+  -webkit-transition: -webkit-transform .2s cubic-bezier(.73,1,.28,.08);
+}
+.hamburger.is-open .hamb-middle { display: none; }
+.hamburger.is-open .hamb-bottom {
+  -webkit-transform: rotate(-45deg);
+  -webkit-transition: -webkit-transform .2s cubic-bezier(.73,1,.28,.08);
+}
+.hamburger.is-open:before {
+  content: '';
+  display: block;
+  width: 100px;
+  font-size: 14px;
+  color: #fff;
+  line-height: 32px;
+  text-align: center;
+  opacity: 0;
+  -webkit-transform: translate3d(0,0,0);
+  -webkit-transition: all .35s ease-in-out;
+}
+.hamburger.is-open:hover:before {
+  opacity: 1;
+  display: block;
+  -webkit-transform: translate3d(-100px,0,0);
+  -webkit-transition: all .35s ease-in-out;
+}
+
+/*-------------------------------*/
+/*            Overlay            */
+/*-------------------------------*/
+
+.overlay {
+    position: fixed;
+    display: none;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(250,250,250,.8);
+    z-index: 1;
+}
+</style>
+
+<script>
+
+    $(document).ready(function () {
+  var trigger = $('.hamburger'),
+      overlay = $('.overlay'),
+     isClosed = false;
+
+    trigger.click(function () {
+      hamburger_cross();
+    });
+
+    function hamburger_cross() {
+
+      if (isClosed == true) {
+        overlay.hide();
+        trigger.removeClass('is-open');
+        trigger.addClass('is-closed');
+        isClosed = false;
+      } else {
+        overlay.show();
+        trigger.removeClass('is-closed');
+        trigger.addClass('is-open');
+        isClosed = true;
+      }
+  }
+
+  $('[data-toggle="offcanvas"]').click(function () {
+        $('#wrapper').toggleClass('toggled');
+  });
+});
+
+</script>
+
+</body>
+
+</html>
+
+
+
+
